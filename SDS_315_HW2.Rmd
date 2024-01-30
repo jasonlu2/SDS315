@@ -6,7 +6,10 @@ output:
     df_print: paged
   pdf_document: default
 ---
+[Link to GitHub](https://github.com/jasonlu2/SDS315/blob/main/SDS_315_HW2.Rmd)
+
 ***
+
 ## **Problem 1: Beauty, or not, in the classroom**
 
 ```{r echo = FALSE, message = FALSE}
@@ -16,7 +19,7 @@ library(dplyr)
 profs <- read.csv("profs.csv")
 
 ggplot(profs) + 
-  geom_histogram(aes(x = eval), bins = 9) + 
+  geom_histogram(aes(x = eval), bins = 9, col = "black", fill = "white") + 
   labs(title = "Histogram of Course Evaluation Scores", 
        x = "Course Teaching Evaluation Score",
        y = "Count")
@@ -117,7 +120,7 @@ nine_hour <- bikeshare %>%
   mutate(workingday = ifelse(workingday == 1, "Working Day", "Non-working Day"))
 
 ggplot(nine_hour) + 
-  geom_col(aes(x = weathersit, y = avg)) +
+  geom_col(aes(x = weathersit, y = avg), col = "black", fill = "white") +
   labs(title = "Average Ridership at 9 AM by Weather Situation",
        x = "Weather Situation",
        y = "Average Count") +
@@ -229,7 +232,7 @@ artists <- ten_week_hits %>%
   filter(ten_weeks >= 30)
 
 ggplot(artists) + 
-  geom_col(aes(x = reorder(performer, -ten_weeks), y = ten_weeks)) +
+  geom_col(aes(x = reorder(performer, -ten_weeks), y = ten_weeks), col = "black", fill = "white") +
   labs(title = "Barplot of Artists with at least 30 Songs as 10-Week Hits",
        x = "Artist",
        y = "Count") +
@@ -240,8 +243,3 @@ The bar plot displays the 19 musical artists who have had at least 30 songs in
 the Billboard Top 100 for a minimum of 10 weeks. The artists arae listed in 
 ascending order of least songs to most songs, starting of course from 
 `r min(artists$ten_weeks)` and ending at `r max(artists$ten_weeks)`.
-
-
-
-
-
