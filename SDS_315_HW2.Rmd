@@ -1,7 +1,6 @@
 ---
 title: "SDS 315 Homework 2"
 author: "Jason Lu (jl83734)"
-github: null
 output:
   html_document:
     df_print: paged
