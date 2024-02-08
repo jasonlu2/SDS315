@@ -1,0 +1,163 @@
+---
+title: "SDS 315 Homework 3"
+author: "Jason Lu"
+output: html_document
+---
+
+***
+
+## **Problem 1:**
+
+```{r echo = FALSE, message = FALSE}
+library(dplyr)
+
+creatinine <- read.csv("creatinine.csv")
+
+lm(creatclear ~ age, data = creatinine) %>% coef()
+
+creatinine_model <- lm(creatclear ~ age, data = creatinine) %>% 
+  summary()
+
+creatinine_intercept <- creatinine_model$coefficients[1, 1]
+creatinine_slope <- creatinine_model$coefficients[2, 1]
+```
+
+Given the intercept and slope, we can determine an expected creatinine clearance
+rate for a 55 year-old. Using the formula y = mx+b, with m being the slope
+(`r creatinine_slope %>% round(2)`), x being the age (55), and b being the y-intercept
+(`r creatinine_intercept %>%  round(2)`), we calculate an expected creatinine clearance of
+`r (55*creatinine_slope + creatinine_intercept) %>%  round(2)` mL per minute.
+
+The slope, m, means that for every increase in age by one year, the creatinine 
+clearance level is supposed to decrease by 
+`r creatinine_slope %>% round(2) %>% abs()` mL per minute.
+
+Using the same equation, the expected creatinine clearance rate for a 40 year old
+and 60 year old are `r (40*creatinine_slope + creatinine_intercept) %>%  round(2)` 
+and `r (60*creatinine_slope + creatinine_intercept) %>%  round(2)` respectively.
+To find the residual value, we do actual value minus expected value, to find that
+the 40 year old's creatinine clearance of 135 mL/min is higher than what is expected
+and in conclusion, healthier than the 60 year old with a rate of 112 mL/min.
+
+## **Problem 2**
+```{r echo = FALSE, message = FALSE}
+library(tidyverse)
+library(kableExtra)
+
+marketmodel <- read.csv("marketmodel.csv")
+
+stock_list <- c("AAPL", "GOOG", "MRK", "JNJ", "WMT", "TGT")
+
+# initialize data frame
+results <- data.frame(
+  Ticker = character(),
+  Intercept = numeric(),
+  Slope = numeric(),
+  R_Squared = numeric()
+)
+
+# loop through stock_list to fill data frame
+for (name in stock_list) {
+  stock <- lm(formula = paste(name, "~ SPY"), data = marketmodel)
+  
+  intercept <- coef(stock)[1]
+  slope <- coef(stock)[2]
+  r_squared <- summary(stock)$r.squared
+  
+  results <- bind_rows(results, data.frame(
+    Ticker = toupper(name),
+    Intercept = intercept,
+    Slope = slope,
+    R_Squared = r_squared
+  ))
+}
+```
+From the video, the $\beta$ of a stock is measuring the change as a percent in 
+an asset's return given a 1% change in the market portfolio and is a measure of 
+systematic risk for a firm's stock. Firms with less systematic risk will have a 
+$\beta$ value less than 1 and firms with a higher systematic risk will have a 
+$\beta$ value greater than 1. For example, a grocery store is like to have a 
+$\beta$ value less than 1 because groceries are an inelastic good, while a
+jewelery store would like have a $\beta$ value greater than 1, since jewelry
+is a luxury good. By default, the system risk of a firm is 1 and a $\beta$ value 
+of 0 indicates no systematic risk. There is a rare case where $\beta$ can be 
+negative, and this just means that a firm would do very well when the market portfolio
+does poorly, and acts as an form of "insurance" in the event of a market downturn.
+
+```{r echo = FALSE}
+# create table with kableExtra
+results %>% 
+  kable(col.names = c("Stock", "Intercept", "Slope", "R-Squared"), row.names = FALSE) %>% 
+  kable_styling()
+```
+
+The table displays 6 stocks and their respective variables. These variables include
+$\beta_0$ (intercept), $\beta_1$ (slope), and R^2^ for each regression of the 
+corresponding stock.
+
+```{r echo = FALSE}
+max_result <- results[results$Slope == max(results$Slope), ]
+min_result <- results[results$Slope == min(results$Slope), ]
+```
+From the table, the stock with the *lowest* systematic risk is `r min_result$Ticker` 
+and the stock with the *highest* systematic risk is `r max_result$Ticker`.
+
+## **Problem 3**
+```{r echo = FALSE}
+covid <- read.csv("covid.csv")
+
+italy <- covid %>% 
+  filter(country == "Italy")
+spain <- covid %>%
+  filter(country == "Spain")
+
+italy_model <- lm(log(deaths) ~ days_since_first_death, data = italy)
+spain_model <- lm(log(deaths) ~ days_since_first_death, data = spain)
+
+italy_growth_rate <- coef(italy_model)[2] * 100
+italy_doubling_time <- (70 / italy_growth_rate) %>% 
+  round()
+
+spain_growth_rate <- coef(spain_model)[2] * 100
+spain_doubling_time <- (70 / spain_growth_rate) %>% 
+  round()
+```
+The estimated growth rate and doubling time for Italy are 
+`r italy_growth_rate %>% round(3)`% per year and `r italy_doubling_time %>%  round()` 
+days respectively.
+
+The estimated growth rate and doubling time for Spain are 
+`r spain_growth_rate %>%  round(3)`% per year and `r spain_doubling_time %>%  round()` 
+days respectively.
+
+```{r echo = FALSE}
+ggplot(covid) + geom_line(aes(x = days_since_first_death, y = deaths, col = country)) +
+  labs(title = "Daily Covid Deaths Over Time in Italy and Spain",
+       x = "Days Since First Death",
+       y = "Number of Deaths")
+```
+
+## **Problem 4**
+```{r echo = FALSE}
+milk <- read.csv("milk.csv")
+
+milk_model <- lm(log(sales) ~ log(price), data = milk)
+beta <- coef(milk_model)[2]
+```
+
+Since the economists' power-law model is an exponential function, we just take the
+logarithm of both sides to fit the model. After doing this, we get that the
+estimated price elasticity of demand for milk,($\beta$), is equal to 
+`r beta %>% round(3)`.
+
+
+
+
+
+
+
+
+
+
+
+
