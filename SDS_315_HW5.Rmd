@@ -1,0 +1,132 @@
+---
+title: "SDS 315 Homework 5"
+author: "Jason Lu"
+output: html_document
+---
+
+***
+
+## **Problem 1**
+
+```{r echo = FALSE, message = FALSE}
+library(ggplot2)
+library(mosaic)
+
+set.seed(123)
+sec_sim <- do(100000) * nflip(2021, prob = .024)
+
+sec_p_value <- sum(sec_sim >= 70) / 100000
+```
+
+In this problem, the null hypothesis is that securities trades from the Iron Bank 
+are flagged at the same 2.4% baseline rate as that of other traders.  
+
+The test statistic is the proportion of flagged trades to total trades.  
+
+```{r echo = FALSE}
+ggplot(sec_sim) + geom_histogram(aes(x = nflip), binwidth = 1)
+```
+
+The calculated p-value is `r sec_p_value`.  
+
+Because the p-value is quite smaller than 0.05, it suggests that the proportion
+of flagged trades happening at Iron Bank is much higher than the baseline rate, 
+and therefore, the SEC most likely needs to conduct an investigation to make sure
+that this was just by chance, or there is an explanation behind the small p-value.
+
+## **Problem 2**
+```{r echo = FALSE}
+health_sim <- do(100000) * nflip(50, prob = .03)
+
+health_p_value <- sum(health_sim >= 8) / 100000
+```
+
+In this problem, the null hypothesis is that restaurants, including Gourmet Bites, 
+in the city are cited for health code violations at the same 3% baseline rate.  
+
+The test statistic is the proportion of health code violations to all restaurant 
+inspections.  
+
+```{r echo = FALSE}
+ggplot(health_sim) + geom_histogram(aes(x = nflip), binwidth = 1)
+```
+
+The calculated p-value is `r health_p_value`. 
+
+Because the p-value is significantly smaller than 0.05, it suggests that the proportion
+of health code violations occurring at Gourmet Bites restaurants is much higher than 
+the baseline rate, and that the Health Department should follow through with their
+plan to take appropriate action.
+
+## **Problem 3**
+```{r echo = FALSE, message = FALSE}
+# Part A
+library(tidyverse)
+
+text <- readLines("brown_sentences.txt")
+text.df <- data.frame(sentence = text)
+letter_freq <- read.csv("letter_frequencies.csv")
+
+calculate_chi_squared = function(sentence, freq_table) {
+  
+  # Ensure letter frequencies are normalized and sum to 1
+  freq_table$Probability = freq_table$Probability / sum(freq_table$Probability)
+  
+  # Remove non-letters and convert to uppercase
+  clean_sentence = gsub("[^A-Za-z]", "", sentence)
+  clean_sentence = toupper(clean_sentence)
+  
+  # Count the occurrences of each letter in the sentence
+  observed_counts = table(factor(strsplit(clean_sentence, "")[[1]], levels = freq_table$Letter))
+  
+  # Calculate expected counts
+  total_letters = sum(observed_counts)
+  expected_counts = total_letters * freq_table$Probability
+  
+  # Chi-squared statistic
+  chi_squared_stat = sum((observed_counts - expected_counts)^2 / expected_counts)
+  
+  return(chi_squared_stat)
+}
+
+brown_sentences_chi_squared <- sapply(text.df$sentence, calculate_chi_squared, letter_freq)
+
+ggplot(data.frame(brown_sentences_chi_squared))  +
+  geom_histogram(aes(x = brown_sentences_chi_squared), binwidth = 5)
+```
+
+```{r echo = FALSE, message = FALSE}
+# Part B
+library(kableExtra)
+
+sentences <- c(
+    "She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
+    "Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.",
+    "The museum’s new exhibit features ancient artifacts from various civilizations around the world.",
+    "He carefully examined the document, looking for any clues that might help solve the mystery.",
+    "The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.",
+    "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.",
+    "The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.",
+    "They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.",
+    "The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.",
+    "Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations."
+)
+
+sentence_df <- data.frame(sentence = sentences)
+
+sentences_chi_squared <- sapply(sentence_df$sentence, calculate_chi_squared, letter_freq)
+
+p_values <- 1 - pchisq(sentences_chi_squared, df = mean(brown_sentences_chi_squared))
+
+p_values_df <- data.frame(sentence = sentences, p_value = p_values %>% round(3))
+watermarked <- p_values_df[which.min(p_values), ]
+p_values_df <- data.frame(p_value = p_values %>% round(3))
+
+p_values_df %>% 
+  kable(col.names = c("Sentence", "p-value")) %>% 
+  kable_styling()
+```
+
+Given the extremely low p-value for the sentence, which when rounded to three 
+decimal points becomes 0, the sentence produced by an LLM with a watermark is 
+"`r watermarked$sentence`"
