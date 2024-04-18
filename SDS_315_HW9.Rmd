@@ -1,0 +1,164 @@
+---
+title: "HW 9"
+author: "Jason Lu"
+output: html_document
+---
+
+
+
+***
+
+## **Problem 1**
+
+#### **Part A**
+
+```{r echo = FALSE, message = FALSE}
+library(dplyr)
+
+turnout <- read.csv("turnout.csv")
+
+# Proportion of those receiving a GOTV call who voted in 1998
+gotv_prop_yes <- mean(turnout$voted1998[turnout$GOTV_call == 1])
+
+# Proportion of those not receiving a GOTV call who voted in 1998
+gotv_prop_no <- mean(turnout$voted1998[turnout$GOTV_call == 0])
+
+
+# 95% confidence interval for the difference in the two proportions
+call_yes_count <- sum(turnout$GOTV_call == 1)
+call_no_count <- sum(turnout$GOTV_call == 0)
+
+margin_of_error <- 1.96 * sqrt((gotv_prop_yes * (1-gotv_prop_yes) / call_yes_count) + 
+                                 (gotv_prop_no * (1-gotv_prop_no) / call_no_count))
+
+lower_bound = gotv_prop_yes - gotv_prop_no - margin_of_error
+upper_bound = gotv_prop_yes - gotv_prop_no + margin_of_error
+```
+
+The proportion of those receiving a GOTV call who voted in 1998 is 
+`r gotv_prop_yes %>% round(3)`.  
+The proportion of those *not* receiving a GOTV call who voted in 1998 is 
+`r gotv_prop_no %>% round(3)`.
+We are 95% confident that the interval for the difference in proportions is 
+`r lower_bound %>%  round(3)`, `r upper_bound %>%  round(3)`.  
+
+#### **Part B**
+
+```{r echo = FALSE, message = FALSE}
+summary_stats <- aggregate(cbind(voted1996, AGE, MAJORPTY) ~ GOTV_call, 
+                           data = turnout, FUN = mean)
+
+summary_stats
+```
+
+#### **Part C**
+```{r echo = FALSE}
+library(MatchIt)
+
+# Check "matched" data set is balanced 
+turnout_matched <- matchit(GOTV_call ~ voted1996 + AGE + MAJORPTY, 
+                           data = turnout, ratio = 5) %>% 
+  match.data
+
+matched_summary_stats <- aggregate(cbind(voted1996, AGE, MAJORPTY) ~ GOTV_call, 
+                           data = turnout_matched, FUN = mean)
+
+# Repeat analysis from Part A with matched data
+gotv_matched_prop_yes <- mean(turnout_matched$voted1998[turnout_matched$GOTV_call == 1])
+gotv_matched_prop_no <- mean(turnout_matched$voted1998[turnout_matched$GOTV_call == 0])
+
+call_matched_yes_count <- sum(turnout_matched$GOTV_call == 1)
+call_matched_no_count <- sum(turnout_matched$GOTV_call == 0)
+
+matched_margin_of_error <- 1.96 * sqrt((gotv_matched_prop_yes * (1-gotv_matched_prop_yes) / call_matched_yes_count) + 
+                                 (gotv_matched_prop_no * (1-gotv_matched_prop_no) / call_matched_no_count))
+
+matched_lower_bound = gotv_matched_prop_yes - gotv_matched_prop_no - matched_margin_of_error
+matched_upper_bound = gotv_matched_prop_yes - gotv_matched_prop_no + matched_margin_of_error
+```
+
+The proportion of those receiving a GOTV call in the matched data set who voted in 1998 is 
+`r gotv_matched_prop_yes %>% round(3)`.  
+The proportion of those *not* receiving a GOTV call in the matched data set who voted in 1998 is 
+`r gotv_matched_prop_no %>% round(3)`.
+We are 95% confident that the interval for the difference in proportions in the matched data set is 
+`r matched_lower_bound %>%  round(3)`, `r matched_upper_bound %>%  round(3)`.  
+
+Since the confidence interval after matching the data does not conclude zero, we 
+can conclude that the GOTV call did increase the likelihood of voting in the 
+1998 election.  
+
+## **Problem 2**
+
+#### **Part A**
+```{r echo = FALSE}
+library(ggplot2)
+
+solder <- read.csv("solder.csv")
+
+# Boxplots
+ggplot(solder) + geom_boxplot(aes(x = Opening, y = skips)) +
+  labs(title="Solder Skips by Opening Size of Solder Gun",
+       x="Opening Size", y="Number of Skips")
+
+ggplot(solder) + geom_boxplot(aes(x = Solder, y = skips)) +
+  labs(title="Solder Skips by Solder Thickness of Alloy Used",
+       x="Solder Thickness", y="Number of Skips")
+```
+
+#### **Part B**
+```{r echo = FALSE}
+library(moderndive)
+
+# Regression model
+model <- lm(skips ~ Opening + Solder + Opening:Solder, data = solder)
+
+# Table for each coefficient in model
+get_regression_table(model)
+```
+
+#### **Part C**
+The baseline solder skips on the circuit board for solder guns with a large opening 
+and thick alloy is 0.393.  
+The main effect for the `OpeningM` variable is 2.407 skips. This is the effect of 
+`OpeningM` in isolation.  
+The main effect for the `OpeningS` variable is 5.127 skips. This is the effect of 
+`OpeningS` in isolation.  
+The main effect for the `SolderThin` variable is 2.280 skips. This is the effect of 
+`SolderThin` in isolation.  
+
+The interaction effect for `OpeningM` and `SolderThin` is -0.740 solder skips. 
+In other words, circuit boards with solder guns with a medium opening and thin alloy 
+yield 0.740 less skips than what you would expect from summing the individual 
+“isolated” effects of the two variables.  
+
+The interaction effect for `OpeningS` and `SolderThin` is 9.653 solder skips. 
+In other words, circuit boards with solder guns with a small opening and thin alloy 
+yield 9.653 more skips than what you would expect from summing the individual 
+“isolated” effects of the two variables.  
+
+A large opening paired with thick alloy should be recommended because that combination 
+produces the least skips from the following calculations:  
+
+Large Opening, Thick Alloy (Baseline) = 0.393
+
+Medium Opening, Thick Alloy:
+0.393 + 2.407 = 2.800
+
+Small Opening, Thick Alloy:
+0.393 + 5.127 = 5.520
+
+Large Opening, Thin Alloy:
+0.393 + 2.280 = 2.673
+
+Medium Opening, Thin Alloy:
+0.393 + 2.407 + 2.280 - 0.740 = 4.340
+
+Small Opening, Thin Alloy:
+0.393 + 5.127 + 2.280 + 9.653 = 17.453
+
+
+
+
+
+
