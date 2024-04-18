@@ -4,8 +4,6 @@ author: "Jason Lu"
 output: html_document
 ---
 
-
-
 ***
 
 ## **Problem 1**
@@ -156,7 +154,6 @@ Medium Opening, Thin Alloy:
 
 Small Opening, Thin Alloy:
 0.393 + 5.127 + 2.280 + 9.653 = 17.453
-
 
 
 
