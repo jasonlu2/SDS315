@@ -1,0 +1,118 @@
+---
+title: "SDS 315 HW10"
+author: "Jason Lu"
+output: html_document
+---
+
+## **Problem 1**
+
+1) We are trying to assess whether or not there is an association between the number 
+of FAIR policies and the racial or ethnic composition of a ZIP code.  
+2) To do this, we can use the `lm()` function to create a linear regression model.
+3)
+```{r echo = FALSE, message = FALSE}
+library(moderndive)
+
+redline <- read.csv("redlining.csv")
+
+redline_model <- lm(policies ~ minority + fire + age + income, data = redline)
+
+get_regression_table(redline_model)
+```
+4) Because the 95% confidence interval for minority of (0.003, 0.014) *does not* include 0, there is
+most likely an association between the number of FAIR policies and the 
+racial/ethic composition of a ZIP code. 
+
+
+## **Problem 2**
+
+#### **Part A**
+```{r echo = FALSE, message = FALSE}
+library(ggplot2)
+library(dplyr)
+
+groceries <- read.csv("groceries.csv")
+
+avg_prices <- groceries %>% 
+  group_by(Store) %>% 
+  summarize(AveragePrice = mean(Price))
+
+ggplot(avg_prices) + 
+  geom_bar(aes(x = Store, y = AveragePrice), stat = "identity") +
+  coord_flip() + 
+  labs(title = "Average Prices per Store",
+       x = "Store",
+       y = "Average Price")
+```
+
+#### **Part B**
+```{r echo = FALSE}
+product_sold <- groceries %>% 
+  group_by(Product) %>% 
+  summarize(store_count = n())
+
+ggplot(product_sold) + 
+  geom_bar(aes(x = Product, y = store_count), stat = "identity") + 
+  coord_flip() + 
+  labs(title = "Number of Stores Selling Product",
+       x = "Product",
+       y = "Number of Stores")
+```
+
+#### **Part C**
+```{r echo = FALSE}
+groceries_model <- lm(Price ~ Product + Type, data = groceries)
+
+confint(groceries_model) %>% 
+  round(2)
+```
+Compared with ordinary grocery stores (like Albertsons, HEB, or Krogers), 
+convenience stores charge somewhere between 41 and 91 cents more for the same 
+product.  
+
+#### **Part D**
+```{r echo = FALSE, message = FALSE}
+library(mosaic)
+
+store_model <- lm(Price ~ Product + Store, data = groceries)
+model_coef <- coef(store_model)
+
+sort(model_coef, decreasing = TRUE) %>% 
+  head(6) %>% 
+  round(2)
+```
+The stores charging the *highest prices* when comparing the same products are 
+Whole Foods and Wheatsville Food Co-op.
+
+#### **Part E**
+```{r echo = FALSE}
+model_coef %>%
+  round(2)
+```
+
+The most likely outcome is that Central Market charges a similar amount to HEB 
+for the same product because their estimates are very similar and their confidence 
+intervals contain each other's values. When looking at other stores such as Whole 
+Foods, there is a much larger difference than the difference between HEB and 
+Central Market.
+
+#### **Part F**
+```{r echo = FALSE, warning = FALSE}
+library(effectsize)
+
+groceries <- groceries %>% 
+  mutate(Income10K = Income / 10000)
+
+income_model <- lm(Price ~ Product + Income10K, data = groceries)
+
+get_regression_table(income_model)
+
+standardize_parameters(income_model)
+```
+Based on the negative sign of the coefficient of Income10K, consumers in poorer 
+ZIP codes seem to pay more for the same product, on average, because if you 
+increase Income10K, the base price for products decreases.
+
+A one standard-deviation increase in the income of a ZIP code seems to be 
+associated with a -0.03 standard-deviation change in the price that consumers in 
+that ZIP code expect to pay for the same product.
